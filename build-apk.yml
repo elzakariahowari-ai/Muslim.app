@@ -1,0 +1,48 @@
+name: Build Android APK (MUSLIM App)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Capacitor CLI & Create Project
+        run: |
+          npm install -g @capacitor/cli @capacitor/core
+          mkdir app-build && cd app-build
+          cp ../index.html ./
+          npm init -y
+          npm install @capacitor/core @capacitor/android
+          npx cap init MUSLIM com.muslim.app --web-dir .
+          npx cap add android
+          npx cap sync android
+
+      - name: Build APK via Gradle
+        run: |
+          cd app-build/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MUSLIM-App-APK
+          path: app-build/android/app/build/outputs/apk/debug/app-debug.apk
